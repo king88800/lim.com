@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luminar | Modern Photo Editor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #f43f5e;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --glass: rgba(15, 23, 42, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --overlay: rgba(15, 23, 42, 0.8);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: url('https://iili.io/F3rcLvf.png') no-repeat center center fixed;
+            background-size: cover;
+            color: var(--light);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.9));
+            z-index: -1;
+        }
+
+        .particles-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .glass-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+        }
+
+        header {
+            padding: 2rem;
+            text-align: center;
+            border-bottom: 1px solid var(--glass-border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.1), rgba(244, 63, 94, 0.1));
+            z-index: -1;
+        }
+
+        header h1 {
+            font-size: 2.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            background: linear-gradient(90deg, #e0e7ff, #c7d2fe);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        header p {
+            font-weight: 300;
+            opacity: 0.85;
+            max-width: 600px;
+            margin: 0 auto;
+            font-size: 1.1rem;
+        }
+
+        .editor-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .dropzone {
+            background: var(--overlay);
+            border: 2px dashed var(--glass-border);
+            border-radius: 16px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dropzone::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(244, 63, 94, 0.05));
+            z-index: -1;
+        }
+
+        .dropzone:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .dropzone i {
+            font-size: 3.5rem;
+            margin-bottom: 1.25rem;
+            color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 2px solid var(--glass-border);
+        }
+
+        .dropzone p {
+            font-size: 1.15rem;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .dropzone span {
+            margin: 0.75rem 0;
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: rgba(15, 23, 42, 0.7);
+            border-radius: 16px;
+            overflow: hidden;
+            aspect-ratio: 1/1;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        #editor-canvas {
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+
+        .empty-state {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.5);
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .empty-state i {
+            font-size: 4.5rem;
+            margin-bottom: 1.5rem;
+            opacity: 0.3;
+        }
+
+        .empty-state p {
+            max-width: 300px;
+            line-height: 1.6;
+        }
+
+        .toolbar {
+            grid-column: span 2;
+            background: var(--overlay);
+            border-radius: 16px;
+            padding: 1.75rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .tool-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .tool-section h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 500;
+            font-size: 1.25rem;
+            color: #e0e7ff;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .slider-control {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .slider-control label {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .slider-control span {
+            font-weight: 500;
+            color: #c7d2fe;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .filter-btn {
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 0.75rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .filter-btn:hover {
+            background: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .action-buttons {
+            grid-column: span 2;
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--glass-border);
+            margin-top: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 0.9rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 1px solid var(--glass-border);
+            padding: 0.9rem 2rem;
+            border-radius: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.2);
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            z-index: 10;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 900px) {
+            .editor-wrapper {
+                grid-template-columns: 1fr;
+            }
+            
+            .toolbar {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                grid-column: span 1;
+            }
+            
+            .canvas-container {
+                min-height: 400px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .glass-container {
+                margin: 1rem;
+            }
+            
+            header {
+                padding: 1.5rem;
+            }
+            
+            header h1 {
+                font-size: 2.25rem;
+            }
+            
+            .editor-wrapper {
+                padding: 1rem;
+            }
+            
+            .toolbar {
+                padding: 1.25rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn-primary, .btn-secondary {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles-background" id="particles-js"></div>
+    <div class="spinner" id="spinner"></div>
+    
+    <div class="glass-container">
+        <header>
+            <h1><i class="fas fa-camera"></i> LUMINAR</h1>
+            <p>Transform your photos with our powerful online editor. Drag & drop your image to begin.</p>
+        </header>
+
+        <div class="editor-wrapper">
+            <div class="upload-section">
+                <div class="dropzone" id="dropzone">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Drag & drop your image here</p>
+                    <span>or</span>
+                    <button class="btn-primary" id="browse-btn">Browse Files</button>
+                    <input type="file" id="file-input" accept="image/*">
+                </div>
+            </div>
+
+            <div class="canvas-container">
+                <canvas id="editor-canvas"></canvas>
+                <div class="empty-state" id="empty-state">
+                    <i class="fas fa-image"></i>
+                    <p>Upload an image to start editing. Supported formats: JPG, PNG, WEBP</p>
+                </div>
+            </div>
+
+            <div class="toolbar">
+                <div class="tool-section">
+                    <h3><i class="fas fa-sliders-h"></i> Adjustments</h3>
+                    <div class="slider-control">
+                        <label>Brightness <span id="brightness-value">0</span></label>
+                        <input type="range" id="brightness-slider" min="-100" max="100" value="0">
+                    </div>
+                    <div class="slider-control">
+                        <label>Contrast <span id="contrast-value">0</span></label>
+                        <input type="range" id="contrast-slider" min="-100" max="100" value="0">
+                    </div>
+                    <div class="slider-control">
+                        <label>Saturation <span id="saturation-value">0</span></label>
+                        <input type="range" id="saturation-slider" min="-100" max="100" value="0">
+                    </div>
+                </div>
+
+                <div class="tool-section">
+                    <h3><i class="fas fa-magic"></i> Filters</h3>
+                    <div class="filter-grid">
+                        <button class="filter-btn active" data-filter="none">Original</button>
+                        <button class="filter-btn" data-filter="clarendon">Clarendon</button>
+                        <button class="filter-btn" data-filter="gingham">Gingham</button>
+                        <button class="filter-btn" data-filter="moon">Moon</button>
+                        <button class="filter-btn" data-filter="lark">Lark</button>
+                        <button class="filter-btn" data-filter="reyes">Reyes</button>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-secondary" id="reset-btn"><i class="fas fa-undo"></i> Reset All</button>
+                    <button class="btn-primary" id="download-btn"><i class="fas fa-download"></i> Download Image</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Fabric.js canvas
+            const canvas = new fabric.Canvas('editor-canvas', {
+                backgroundColor: 'transparent',
+                preserveObjectStacking: true
+            });
+
+            // DOM Elements
+            const fileInput = document.getElementById('file-input');
+            const browseBtn = document.getElementById('browse-btn');
+            const dropzone = document.getElementById('dropzone');
+            const emptyState = document.getElementById('empty-state');
+            const brightnessSlider = document.getElementById('brightness-slider');
+            const contrastSlider = document.getElementById('contrast-slider');
+            const saturationSlider = document.getElementById('saturation-slider');
+            const brightnessValue = document.getElementById('brightness-value');
+            const contrastValue = document.getElementById('contrast-value');
+            const saturationValue = document.getElementById('saturation-value');
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const downloadBtn = document.getElementById('download-btn');
+            const spinner = document.getElementById('spinner');
+
+            let currentImage = null;
+            let originalImageData = null;
+
+            // Event Listeners
+            browseBtn.addEventListener('click', () => fileInput.click());
+            dropzone.addEventListener('click', () => fileInput.click());
+            
+            fileInput.addEventListener('change', handleImageUpload);
+            dropzone.addEventListener('dragover', handleDragOver);
+            dropzone.addEventListener('drop', handleDrop);
+            
+            brightnessSlider.addEventListener('input', () => {
+                brightnessValue.textContent = brightnessSlider.value;
+                applyBrightness();
+            });
+            
+            contrastSlider.addEventListener('input', () => {
+                contrastValue.textContent = contrastSlider.value;
+                applyContrast();
+            });
+            
+            saturationSlider.addEventListener('input', () => {
+                saturationValue.textContent = saturationSlider.value;
+                applySaturation();
+            });
+            
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', () => applyFilter(btn.dataset.filter));
+            });
+            
+            resetBtn.addEventListener('click', resetImage);
+            downloadBtn.addEventListener('click', downloadImage);
+
+            // Functions
+            function handleImageUpload(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                if (!file.type.match('image.*')) {
+                    alert('Please select an image file (JPG, PNG, WEBP)');
+                    return;
+                }
+                
+                showSpinner();
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    loadImageToCanvas(event.target.result);
+                    hideSpinner();
+                };
+                reader.onerror = function() {
+                    hideSpinner();
+                    alert('Error reading file. Please try another image.');
+                };
+                reader.readAsDataURL(file);
+            }
+
+            function handleDragOver(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.style.borderColor = '#6366f1';
+                dropzone.style.backgroundColor = 'rgba(99, 102, 241, 0.2)';
+            }
+
+            function handleDrop(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                dropzone.style.backgroundColor = 'rgba(15, 23, 42, 0.7)';
+                
+                const file = e.dataTransfer.files[0];
+                if (!file) return;
+                
+                if (!file.type.match('image.*')) {
+                    alert('Please select an image file (JPG, PNG, WEBP)');
+                    return;
+                }
+                
+                showSpinner();
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    loadImageToCanvas(event.target.result);
+                    hideSpinner();
+                };
+                reader.onerror = function() {
+                    hideSpinner();
+                    alert('Error reading file. Please try another image.');
+                };
+                reader.readAsDataURL(file);
+            }
+
+            function loadImageToCanvas(imageUrl) {
+                fabric.Image.fromURL(imageUrl, function(img) {
+                    canvas.clear();
+                    
+                    // Scale image to fit canvas
+                    const scale = Math.min(
+                        canvas.width / img.width,
+                        canvas.height / img.height
+                    );
+                    
+                    img.set({
+                        left: canvas.width / 2,
+                        top: canvas.height / 2,
+                        originX: 'center',
+                        originY: 'center',
+                        scaleX: scale,
+                        scaleY: scale
+                    });
+                    
+                    canvas.add(img);
+                    canvas.setActiveObject(img);
+                    currentImage = img;
+                    originalImageData = img.toDataURL();
+                    
+                    // Show canvas and hide empty state
+                    document.getElementById('editor-canvas').style.display = 'block';
+                    emptyState.style.display = 'none';
+                    
+                    // Reset sliders
+                    brightnessSlider.value = 0;
+                    contrastSlider.value = 0;
+                    saturationSlider.value = 0;
+                    brightnessValue.textContent = '0';
+                    contrastValue.textContent = '0';
+                    saturationValue.textContent = '0';
+                    
+                    // Reset filters
+                    filterButtons.forEach(btn => {
+                        if (btn.dataset.filter === 'none') {
+                            btn.classList.add('active');
+                        } else {
+                            btn.classList.remove('active');
+                        }
+                    });
+                }, {
+                    crossOrigin: 'anonymous'
+                });
+            }
+
+            function applyBrightness() {
+                if (!currentImage) return;
+                
+                const value = parseInt(brightnessSlider.value) / 100;
+                currentImage.filters = currentImage.filters || [];
+                
+                // Remove existing brightness filter if any
+                currentImage.filters = currentImage.filters.filter(
+                    filter => !(filter instanceof fabric.Image.filters.Brightness)
+                );
+                
+                if (value !== 0) {
+                    currentImage.filters.push(
+                        new fabric.Image.filters.Brightness({ brightness: value })
+                    );
+                }
+                
+                currentImage.applyFilters();
+                canvas.renderAll();
+            }
+
+            function applyContrast() {
+                if (!currentImage) return;
+                
+                const value = parseInt(contrastSlider.value) / 100;
+                currentImage.filters = currentImage.filters || [];
+                
+                // Remove existing contrast filter if any
+                currentImage.filters = currentImage.filters.filter(
+                    filter => !(filter instanceof fabric.Image.filters.Contrast)
+                );
+                
+                if (value !== 0) {
+                    currentImage.filters.push(
+                        new fabric.Image.filters.Contrast({ contrast: value })
+                    );
+                }
+                
+                currentImage.applyFilters();
+                canvas.renderAll();
+            }
+
+            function applySaturation() {
+                if (!currentImage) return;
+                
+                const value = parseInt(saturationSlider.value) / 100;
+                currentImage.filters = currentImage.filters || [];
+                
+                // Remove existing saturation filter if any
+                currentImage.filters = currentImage.filters.filter(
+                    filter => !(filter instanceof fabric.Image.filters.Saturation)
+                );
+                
+                if (value !== 0) {
+                    currentImage.filters.push(
+                        new fabric.Image.filters.Saturation({ saturation: 1 + value })
+                    );
+                }
+                
+                currentImage.applyFilters();
+                canvas.renderAll();
+            }
+
+            function applyFilter(filterName) {
+                if (!currentImage) return;
+                
+                // Reset all filters first
+                currentImage.filters = [];
+                
+                // Apply selected filter
+                switch(filterName) {
+                    case 'clarendon':
+                        currentImage.filters.push(
+                            new fabric.Image.filters.Brightness({ brightness: 0.1 }),
+                            new fabric.Image.filters.Contrast({ contrast: 0.1 }),
+                            new fabric.Image.filters.Saturation({ saturation: 1.2 })
+                        );
+                        break;
+                    case 'gingham':
+                        currentImage.filters.push(
+                            new fabric.Image.filters.Sepia({ sepia: 0.3 }),
+                            new fabric.Image.filters.Brightness({ brightness: 0.05 })
+                        );
+                        break;
+                    case 'moon':
+                        currentImage.filters.push(
+                            new fabric.Image.filters.Grayscale(),
+                            new fabric.Image.filters.Brightness({ brightness: 0.1 }),
+                            new fabric.Image.filters.Contrast({ contrast: 0.1 })
+                        );
+                        break;
+                    case 'lark':
+                        currentImage.filters.push(
+                            new fabric.Image.filters.Brightness({ brightness: 0.05 }),
+                            new fabric.Image.filters.Saturation({ saturation: 1.25 })
+                        );
+                        break;
+                    case 'reyes':
+                        currentImage.filters.push(
+                            new fabric.Image.filters.Sepia({ sepia: 0.4 }),
+                            new fabric.Image.filters.Brightness({ brightness: 0.15 })
+                        );
+                        break;
+                }
+                
+                currentImage.applyFilters();
+                canvas.renderAll();
+                
+                // Update active filter button
+                filterButtons.forEach(btn => {
+                    if (btn.dataset.filter === filterName) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+            }
+
+            function resetImage() {
+                if (!currentImage || !originalImageData) return;
+                
+                fabric.Image.fromURL(originalImageData, function(img) {
+                    const currentObj = canvas.getObjects()[0];
+                    img.set({
+                        left: currentObj.left,
+                        top: currentObj.top,
+                        angle: currentObj.angle,
+                        scaleX: currentObj.scaleX,
+                        scaleY: currentObj.scaleY,
+                        originX: currentObj.originX,
+                        originY: currentObj.originY
+                    });
+                    
+                    canvas.remove(currentObj);
+                    canvas.add(img);
+                    canvas.setActiveObject(img);
+                    currentImage = img;
+                    
+                    // Reset sliders
+                    brightnessSlider.value = 0;
+                    contrastSlider.value = 0;
+                    saturationSlider.value = 0;
+                    brightnessValue.textContent = '0';
+                    contrastValue.textContent = '0';
+                    saturationValue.textContent = '0';
+                    
+                    // Reset filters
+                    filterButtons.forEach(btn => {
+                        if (btn.dataset.filter === 'none') {
+                            btn.classList.add('active');
+                        } else {
+                            btn.classList.remove('active');
+                        }
+                    });
+                }, {
+                    crossOrigin: 'anonymous'
+                });
+            }
+
+            function downloadImage() {
+                if (!currentImage) {
+                    alert('Please upload an image first');
+                    return;
+                }
+                
+                showSpinner();
+                setTimeout(() => {
+                    const link = document.createElement('a');
+                    link.download = 'luminar-edited-image.png';
+                    link.href = canvas.toDataURL({
+                        format: 'png',
+                        quality: 0.95
+                    });
+                    link.click();
+                    hideSpinner();
+                }, 500);
+            }
+
+            function showSpinner() {
+                spinner.style.display = 'block';
+            }
+
+            function hideSpinner() {
+                spinner.style.display = 'none';
+            }
+
+            // Initialize Particles.js background
+            if (typeof particlesJS !== 'undefined') {
+                particlesJS('particles-js', {
+                    particles: {
+                        number: { value: 60, density: { enable: true, value_area: 800 } },
+                        color: { value: "#e0e7ff" },
+                        shape: { type: "circle" },
+                        opacity: { value: 0.4, random: true },
+                        size: { value: 3, random: true },
+                        line_linked: { enable: true, distance: 150, color: "#c7d2fe", opacity: 0.2, width: 1 },
+                        move: { enable: true, speed: 1.5, direction: "none", random: true, straight: false, out_mode: "out" }
+                    },
+                    interactivity: {
+                        detect_on: "canvas",
+                        events: {
+                            onhover: { enable: true, mode: "repulse" },
+                            onclick: { enable: true, mode: "push" }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
